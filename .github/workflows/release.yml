@@ -89,6 +89,8 @@ jobs:
           body: ${{ steps.release_notes.outputs.changelog }}
           draft: false
           prerelease: ${{ steps.version.outputs.is_stable != 'true' }}
+          makeLatest: true
+          allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release Summary

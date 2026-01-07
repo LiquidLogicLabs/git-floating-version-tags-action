@@ -272,13 +272,47 @@ Generate coverage report:
 npm run test:coverage
 ```
 
+### Lint, Build, and Format
+
+Run locally (no act needed):
+
+```bash
+npm run lint      # Run ESLint
+npm run build     # Build the action
+npm run format    # Format code with Prettier
+```
+
+Or test via act (runs in CI environment):
+
+```bash
+npm run lint:act  # Run lint job via act (includes lint, type check, and build)
+```
+
 ### Integration Tests
 
 Integration tests run automatically in GitHub Actions (`.github/workflows/test.yml`). 
 
 To test locally:
 
-**Option 1: Use `act` (recommended for local testing)**
+**Option 1: Use `act` via npm scripts (recommended for local testing)**
+```bash
+# Run test workflow
+npm run test:act
+
+# Run test workflow with verbose output (for debugging)
+npm run test:act:verbose
+
+# Run CI workflow (includes lint and test)
+npm run test:act:ci
+
+# Run just the lint job via act (lint, type check, build)
+npm run lint:act
+
+# Run release workflow (requires tag)
+npm run test:act:release
+```
+
+Or manually with `act`:
 ```bash
 # Install act: https://github.com/nektos/act
 act -W .github/workflows/test.yml

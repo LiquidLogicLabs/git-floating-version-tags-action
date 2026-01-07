@@ -9,6 +9,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:act": "act -W .github/workflows/test.yml --eventpath .github/workflows/.act/event-workflow_call.json",
+    "test:act:verbose": "act -W .github/workflows/test.yml --eventpath .github/workflows/.act/event-workflow_call.json -v",
+    "test:act:ci": "act -W .github/workflows/ci.yml",
+    "test:act:release": "act push --eventpath .github/workflows/.act/event-release.json",
+    "lint:act": "act -W .github/workflows/ci.yml -j lint",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

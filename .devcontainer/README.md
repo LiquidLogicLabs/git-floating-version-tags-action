@@ -26,9 +26,15 @@ To test GitHub Actions workflows locally, you can install `act`:
 ```bash
 # Install act
 curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+```
 
-# Run tests
-act -W .github/workflows/test.yml
+Then use npm scripts to run workflows:
+```bash
+# Run test workflow
+npm run test:act
+
+# Run CI workflow
+npm run test:act:ci
 ```
 
 ## Available Commands
@@ -56,6 +62,17 @@ npm run lint
 
 # Format code
 npm run format
+
+# Lint, build, and format
+npm run lint            # Run ESLint
+npm run build           # Build the action
+npm run format          # Format code with Prettier
+
+# Test workflows with act
+npm run test:act        # Run test workflow
+npm run test:act:verbose # Run test workflow with verbose output (debugging)
+npm run test:act:ci     # Run CI workflow
+npm run lint:act        # Run lint job via act
 ```
 
 ## Notes
