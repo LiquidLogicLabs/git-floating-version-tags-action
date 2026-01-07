@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+
+# IDE and editor files
+.idea/
+*.swp
+*.swo
+*~
+
+# Note: .devcontainer/ is intentionally NOT ignored - it should be committed
+# to provide consistent development environment for all contributors
+
+# OS files
+.DS_Store
+
+# Test coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# AI Tools
+.bmad-core/
+.github/chatmodes/

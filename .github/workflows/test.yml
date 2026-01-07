@@ -1,0 +1,370 @@
+name: Test
+
+on:
+  workflow_call:  # Only workflow_call - no direct triggers
+
+permissions:
+  contents: write  # Required to push tags
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tag operations
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build action
+        run: npm run build
+
+      - name: Configure git for testing
+        run: |
+          git config user.name "Test User"
+          git config user.email "test@example.com"
+
+      - name: Test - Tag with v prefix
+        id: test1
+        run: |
+          echo "🔍 Test 1: Tag with v prefix"
+          # Create a test tag
+          git tag -a v1.2.3 -m "Test tag v1.2.3" || true
+          git push origin v1.2.3 || true
+
+      - name: Run action - Tag with v prefix
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          updateMinor: true
+          verbose: true
+
+      - name: Verify major and minor tags (v prefix)
+        run: |
+          git fetch origin 'refs/tags/v1:refs/tags/v1' 'refs/tags/v1.2:refs/tags/v1.2' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/v1 2>/dev/null || echo "not found")
+          MINOR_SHA=$(git rev-parse refs/tags/v1.2 2>/dev/null || echo "not found")
+          TAG_SHA=$(git rev-parse refs/tags/v1.2.3 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_SHA" = "$TAG_SHA" ] && [ "$MINOR_SHA" = "$TAG_SHA" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Major tag v1 and minor tag v1.2 correctly point to v1.2.3 commit"
+          else
+            echo "❌ Tag verification failed"
+            echo "Major tag SHA: $MAJOR_SHA"
+            echo "Minor tag SHA: $MINOR_SHA"
+            echo "Source tag SHA: $TAG_SHA"
+            exit 1
+          fi
+
+      - name: Test - Tag without v prefix
+        run: |
+          echo "🔍 Test 2: Tag without v prefix"
+          # Create a test tag without v prefix
+          git tag -a 2.0.0 -m "Test tag 2.0.0" || true
+          git push origin 2.0.0 || true
+
+      - name: Run action - Tag without v prefix
+        uses: ./
+        with:
+          tag: '2.0.0'
+          updateMinor: true
+
+      - name: Verify major and minor tags (no v prefix)
+        run: |
+          git fetch origin 'refs/tags/v2:refs/tags/v2' 'refs/tags/v2.0:refs/tags/v2.0' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/v2 2>/dev/null || echo "not found")
+          MINOR_SHA=$(git rev-parse refs/tags/v2.0 2>/dev/null || echo "not found")
+          TAG_SHA=$(git rev-parse refs/tags/2.0.0 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_SHA" = "$TAG_SHA" ] && [ "$MINOR_SHA" = "$TAG_SHA" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Major tag v2 and minor tag v2.0 correctly point to 2.0.0 commit"
+          else
+            echo "❌ Tag verification failed"
+            echo "Major tag SHA: $MAJOR_SHA"
+            echo "Minor tag SHA: $MINOR_SHA"
+            echo "Source tag SHA: $TAG_SHA"
+            exit 1
+          fi
+
+      - name: Test - Different refTag
+        run: |
+          echo "🔍 Test 3: Different refTag"
+          # Create a test tag
+          git tag -a 3.0.0 -m "Test tag 3.0.0" || true
+          git push origin 3.0.0 || true
+
+      - name: Run action - Different refTag
+        uses: ./
+        with:
+          tag: '3.0.0'
+          refTag: 'HEAD'
+          updateMinor: false
+
+      - name: Verify refTag behavior
+        run: |
+          git fetch origin 'refs/tags/v3:refs/tags/v3' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/v3 2>/dev/null || echo "not found")
+          HEAD_SHA=$(git rev-parse HEAD)
+          
+          if [ "$MAJOR_SHA" = "$HEAD_SHA" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Major tag v3 correctly points to HEAD commit (refTag behavior works)"
+          else
+            echo "❌ Ref-tag verification failed"
+            echo "Major tag SHA: $MAJOR_SHA"
+            echo "HEAD SHA: $HEAD_SHA"
+            exit 1
+          fi
+
+      - name: Test - Prerelease skipping
+        run: |
+          echo "🔍 Test 4: Prerelease skipping"
+          # Create a prerelease tag
+          git tag -a v4.0.0-beta.1 -m "Test prerelease tag" || true
+          git push origin v4.0.0-beta.1 || true
+
+      - name: Run action - Prerelease skipping (should fail)
+        uses: ./
+        with:
+          tag: 'v4.0.0-beta.1'
+          updateMinor: false
+        continue-on-error: true
+
+      - name: Verify prerelease was skipped
+        run: |
+          # Check if v4 tag exists (should not)
+          MAJOR_TAG=$(git rev-parse refs/tags/v4 2>/dev/null || echo "not found")
+          if [ "$MAJOR_TAG" = "not found" ]; then
+            echo "✅ Prerelease version correctly skipped (no v4 tag created)"
+          else
+            echo "❌ Prerelease version should have been skipped but v4 tag exists"
+            exit 1
+          fi
+
+      - name: Test - Custom prefix
+        run: |
+          echo "🔍 Test 5: Custom prefix"
+          # Create a test tag
+          git tag -a release-5.1.0 -m "Test tag with custom prefix" || true
+          git push origin release-5.1.0 || true
+
+      - name: Run action - Custom prefix
+        uses: ./
+        with:
+          tag: 'release-5.1.0'
+          prefix: 'release-'
+          updateMinor: true
+
+      - name: Verify custom prefix
+        run: |
+          git fetch origin 'refs/tags/release-5:refs/tags/release-5' 'refs/tags/release-5.1:refs/tags/release-5.1' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/release-5 2>/dev/null || echo "not found")
+          MINOR_SHA=$(git rev-parse refs/tags/release-5.1 2>/dev/null || echo "not found")
+          TAG_SHA=$(git rev-parse refs/tags/release-5.1.0 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_SHA" = "$TAG_SHA" ] && [ "$MINOR_SHA" = "$TAG_SHA" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Custom prefix tags correctly created"
+          else
+            echo "❌ Custom prefix verification failed"
+            exit 1
+          fi
+
+      - name: Test - Major tag only (updateMinor=false)
+        run: |
+          echo "🔍 Test 6: Major tag only"
+          # Create a test tag
+          git tag -a v6.1.0 -m "Test tag v6.1.0" || true
+          git push origin v6.1.0 || true
+
+      - name: Run action - Major tag only
+        uses: ./
+        with:
+          tag: 'v6.1.0'
+          updateMinor: false
+
+      - name: Verify major tag only
+        run: |
+          git fetch origin 'refs/tags/v6:refs/tags/v6' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/v6 2>/dev/null || echo "not found")
+          TAG_SHA=$(git rev-parse refs/tags/v6.1.0 2>/dev/null || echo "not found")
+          MINOR_EXISTS=$(git rev-parse refs/tags/v6.1 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_SHA" = "$TAG_SHA" ] && [ "$MINOR_EXISTS" = "not found" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Major tag v6 created, minor tag v6.1 not created (as expected)"
+          else
+            echo "❌ Major-only tag verification failed"
+            echo "Major tag SHA: $MAJOR_SHA"
+            echo "Source tag SHA: $TAG_SHA"
+            echo "Minor tag exists: $MINOR_EXISTS"
+            exit 1
+          fi
+
+      - name: Test - Update existing floating tag (force update)
+        run: |
+          echo "🔍 Test 7: Force update existing tag"
+          # Create initial tag
+          git tag -a v7.0.0 -m "Test tag v7.0.0" || true
+          git push origin v7.0.0 || true
+          # Create floating tag pointing to initial commit
+          INITIAL_SHA=$(git rev-parse refs/tags/v7.0.0)
+          git tag -a v7 -m "Initial floating tag" $INITIAL_SHA || true
+          git push origin v7 || true
+          # Create new tag for update
+          git tag -a v7.1.0 -m "Test tag v7.1.0" || true
+          git push origin v7.1.0 || true
+
+      - name: Run action - Update existing floating tag
+        uses: ./
+        with:
+          tag: 'v7.1.0'
+          updateMinor: false
+
+      - name: Verify force update
+        run: |
+          git fetch origin 'refs/tags/v7:refs/tags/v7' || true
+          FLOATING_SHA=$(git rev-parse refs/tags/v7 2>/dev/null || echo "not found")
+          NEW_TAG_SHA=$(git rev-parse refs/tags/v7.1.0 2>/dev/null || echo "not found")
+          
+          if [ "$FLOATING_SHA" = "$NEW_TAG_SHA" ] && [ "$FLOATING_SHA" != "not found" ]; then
+            echo "✅ Floating tag v7 successfully updated to point to v7.1.0"
+          else
+            echo "❌ Force update verification failed"
+            echo "Floating tag SHA: $FLOATING_SHA"
+            echo "New tag SHA: $NEW_TAG_SHA"
+            exit 1
+          fi
+
+      - name: Test - Prerelease with ignorePrerelease=false
+        run: |
+          echo "🔍 Test 8: Prerelease allowed"
+          # Create a prerelease tag
+          git tag -a v8.0.0-rc.1 -m "Test prerelease tag" || true
+          git push origin v8.0.0-rc.1 || true
+
+      - name: Run action - Prerelease allowed
+        uses: ./
+        with:
+          tag: 'v8.0.0-rc.1'
+          ignorePrerelease: false
+          updateMinor: false
+
+      - name: Verify prerelease was processed
+        run: |
+          git fetch origin 'refs/tags/v8:refs/tags/v8' || true
+          MAJOR_TAG=$(git rev-parse refs/tags/v8 2>/dev/null || echo "not found")
+          PRERELEASE_SHA=$(git rev-parse refs/tags/v8.0.0-rc.1 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_TAG" = "$PRERELEASE_SHA" ] && [ "$MAJOR_TAG" != "not found" ]; then
+            echo "✅ Prerelease version processed correctly (v8 tag created)"
+          else
+            echo "❌ Prerelease processing failed"
+            echo "Major tag SHA: $MAJOR_TAG"
+            echo "Prerelease tag SHA: $PRERELEASE_SHA"
+            exit 1
+          fi
+
+      - name: Test - RefTag pointing to different commit
+        run: |
+          echo "🔍 Test 9: RefTag pointing to different commit"
+          # Create two commits with different tags
+          echo "test file" > test-file.txt
+          git add test-file.txt
+          git commit -m "Test commit for refTag" || true
+          COMMIT_SHA=$(git rev-parse HEAD)
+          # Create tag on older commit
+          PREVIOUS_SHA=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)
+          git tag -a v9.0.0 -m "Test tag v9.0.0" $PREVIOUS_SHA || true
+          git push origin v9.0.0 || true
+
+      - name: Run action - RefTag to different commit
+        uses: ./
+        with:
+          tag: 'v9.0.0'
+          refTag: 'HEAD'
+          updateMinor: false
+
+      - name: Verify refTag to different commit
+        run: |
+          git fetch origin 'refs/tags/v9:refs/tags/v9' || true
+          FLOATING_SHA=$(git rev-parse refs/tags/v9 2>/dev/null || echo "not found")
+          HEAD_SHA=$(git rev-parse HEAD)
+          TAG_SHA=$(git rev-parse refs/tags/v9.0.0 2>/dev/null || echo "not found")
+          
+          if [ "$FLOATING_SHA" = "$HEAD_SHA" ] && [ "$HEAD_SHA" != "$TAG_SHA" ] && [ "$FLOATING_SHA" != "not found" ]; then
+            echo "✅ Floating tag v9 points to HEAD (different from v9.0.0 tag)"
+          else
+            echo "❌ Ref-tag to different commit verification failed"
+            echo "Floating tag SHA: $FLOATING_SHA"
+            echo "HEAD SHA: $HEAD_SHA"
+            echo "Tag SHA: $TAG_SHA"
+            exit 1
+          fi
+
+      - name: Test - Zero versions (v0.x.x)
+        run: |
+          echo "🔍 Test 10: Zero versions"
+          # Create a test tag with zero major version
+          git tag -a v0.1.0 -m "Test tag v0.1.0" || true
+          git push origin v0.1.0 || true
+
+      - name: Run action - Zero versions
+        uses: ./
+        with:
+          tag: 'v0.1.0'
+          updateMinor: true
+
+      - name: Verify zero versions
+        run: |
+          git fetch origin 'refs/tags/v0:refs/tags/v0' 'refs/tags/v0.1:refs/tags/v0.1' || true
+          MAJOR_SHA=$(git rev-parse refs/tags/v0 2>/dev/null || echo "not found")
+          MINOR_SHA=$(git rev-parse refs/tags/v0.1 2>/dev/null || echo "not found")
+          TAG_SHA=$(git rev-parse refs/tags/v0.1.0 2>/dev/null || echo "not found")
+          
+          if [ "$MAJOR_SHA" = "$TAG_SHA" ] && [ "$MINOR_SHA" = "$TAG_SHA" ] && [ "$MAJOR_SHA" != "not found" ]; then
+            echo "✅ Zero version tags correctly created"
+          else
+            echo "❌ Zero version verification failed"
+            exit 1
+          fi
+
+      - name: Test - Output verification
+        run: |
+          echo "🔍 Test 11: Verify outputs"
+          git tag -a v11.2.3 -m "Test tag for outputs" || true
+          git push origin v11.2.3 || true
+
+      - name: Run action - Output verification
+        id: test-outputs
+        uses: ./
+        with:
+          tag: 'v11.2.3'
+          updateMinor: true
+
+      - name: Verify outputs are set
+        run: |
+          MAJOR_OUTPUT="${{ steps.test-outputs.outputs.majorTag }}"
+          MINOR_OUTPUT="${{ steps.test-outputs.outputs.minorTag }}"
+          
+          if [ "$MAJOR_OUTPUT" = "v11" ] && [ "$MINOR_OUTPUT" = "v11.2" ]; then
+            echo "✅ Outputs correctly set: majorTag=$MAJOR_OUTPUT, minorTag=$MINOR_OUTPUT"
+          else
+            echo "❌ Output verification failed"
+            echo "Major output: $MAJOR_OUTPUT (expected: v11)"
+            echo "Minor output: $MINOR_OUTPUT (expected: v11.2)"
+            exit 1
+          fi
+
+      - name: Test Summary
+        run: |
+          echo "✅ All integration tests passed successfully!"
+

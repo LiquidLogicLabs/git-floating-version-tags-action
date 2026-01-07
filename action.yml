@@ -1,0 +1,37 @@
+name: 'Git Floating Version Tags'
+description: 'Creates or updates floating version tag aliases (major and minor) pointing to a reference commit, extracting version information from a tag.'
+author: 'LiquidLogicLabs'
+inputs:
+  tag:
+    description: 'The tag from which to extract version information (used to determine major/minor versions). Supports tags with or without "v" prefix (e.g., "v1.2.3" or "1.2.3")'
+    required: true
+  refTag:
+    description: 'The tag/commit that floating tags should point to (can be tag name, refs/tags/v1.2.3, or SHA). If not provided, uses the value from tag'
+    required: false
+  prefix:
+    description: 'Version prefix for tag names when creating floating tags'
+    required: false
+    default: 'v'
+  updateMinor:
+    description: 'Whether to update minor version tags (v1.2)'
+    required: false
+    default: 'false'
+  ignorePrerelease:
+    description: 'Whether to skip prerelease versions'
+    required: false
+    default: 'true'
+  verbose:
+    description: 'Enable verbose debug logging. Sets ACTIONS_STEP_DEBUG=true environment variable and enables detailed debug output'
+    required: false
+    default: 'false'
+outputs:
+  majorTag:
+    description: 'The major version tag that was created/updated (e.g., "v2")'
+  minorTag:
+    description: 'The minor version tag that was created/updated (e.g., "v2.3"), if updateMinor is true'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+branding:
+  icon: 'tag'
+  color: 'blue'
