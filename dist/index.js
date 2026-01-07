@@ -25705,34 +25705,30 @@ function getGitWorkingDirectory() {
  */
 async function getCommitSha(ref, verbose) {
     core.info(`Resolving commit SHA for reference: ${ref}`);
-    let output = '';
+    let output = "";
     const cwd = getGitWorkingDirectory();
-    if (verbose) {
-        core.debug(`Using git working directory: ${cwd}`);
-    }
+    core.debug(`Using git working directory: ${cwd}`);
     const options = {
         listeners: {
             stdout: (data) => {
                 output += data.toString();
-            }
+            },
         },
         silent: !verbose,
-        cwd
+        cwd,
     };
     try {
-        await (0, exec_1.exec)('git', ['rev-parse', ref], options);
+        await (0, exec_1.exec)("git", ["rev-parse", ref], options);
         const sha = output.trim();
         if (!sha || sha.length !== 40) {
             throw new Error(`Invalid commit SHA resolved: ${sha}`);
         }
-        if (verbose) {
-            core.debug(`Resolved commit SHA: ${sha}`);
-        }
+        core.debug(`Resolved commit SHA: ${sha}`);
         core.info(`Resolved commit SHA: ${sha.substring(0, 7)}...`);
         return sha;
     }
     catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        const message = error instanceof Error ? error.message : "Unknown error occurred";
         throw new Error(`Failed to resolve commit SHA for "${ref}": ${message}`);
     }
 }
@@ -25740,15 +25736,13 @@ async function getCommitSha(ref, verbose) {
  * Checks if a tag exists locally
  */
 async function tagExists(tagName, verbose) {
-    if (verbose) {
-        core.debug(`Checking if tag exists: ${tagName}`);
-    }
+    core.debug(`Checking if tag exists: ${tagName}`);
     try {
         const cwd = getGitWorkingDirectory();
-        const exitCode = await (0, exec_1.exec)('git', ['rev-parse', `refs/tags/${tagName}`], {
+        const exitCode = await (0, exec_1.exec)("git", ["rev-parse", `refs/tags/${tagName}`], {
             silent: true,
             ignoreReturnCode: true,
-            cwd
+            cwd,
         });
         return exitCode === 0;
     }
@@ -25763,38 +25757,34 @@ async function createOrUpdateTag(tagName, commitSha, verbose) {
     const exists = await tagExists(tagName, verbose);
     if (exists) {
         core.info(`Updating existing tag: ${tagName} -> ${commitSha.substring(0, 7)}`);
-        if (verbose) {
-            core.debug(`Using git tag -f to force update tag ${tagName}`);
-        }
+        core.debug(`Using git tag -f to force update tag ${tagName}`);
         // Force update existing tag
         const cwd = getGitWorkingDirectory();
-        await (0, exec_1.exec)('git', ['tag', '-f', tagName, commitSha], {
+        await (0, exec_1.exec)("git", ["tag", "-f", tagName, commitSha], {
             silent: !verbose,
-            cwd
+            cwd,
         });
         return {
             tagName,
             commitSha,
             created: false,
-            updated: true
+            updated: true,
         };
     }
     else {
         core.info(`Creating new tag: ${tagName} -> ${commitSha.substring(0, 7)}`);
-        if (verbose) {
-            core.debug(`Using git tag to create new tag ${tagName}`);
-        }
+        core.debug(`Using git tag to create new tag ${tagName}`);
         // Create new tag
         const cwd = getGitWorkingDirectory();
-        await (0, exec_1.exec)('git', ['tag', tagName, commitSha], {
+        await (0, exec_1.exec)("git", ["tag", tagName, commitSha], {
             silent: !verbose,
-            cwd
+            cwd,
         });
         return {
             tagName,
             commitSha,
             created: true,
-            updated: false
+            updated: false,
         };
     }
 }
@@ -25802,25 +25792,23 @@ async function createOrUpdateTag(tagName, commitSha, verbose) {
  * Pushes a tag to the remote repository
  */
 async function pushTag(tagName, force, verbose) {
-    const action = force ? 'force pushing' : 'pushing';
+    const action = force ? "force pushing" : "pushing";
     core.info(`${action} tag ${tagName} to remote`);
-    const args = ['push', 'origin', tagName];
+    const args = ["push", "origin", tagName];
     if (force) {
-        args.push('--force');
+        args.push("--force");
     }
-    if (verbose) {
-        core.debug(`Executing: git ${args.join(' ')}`);
-    }
+    core.debug(`Executing: git ${args.join(" ")}`);
     try {
         const cwd = getGitWorkingDirectory();
-        await (0, exec_1.exec)('git', args, {
+        await (0, exec_1.exec)("git", args, {
             silent: !verbose,
-            cwd
+            cwd,
         });
         core.info(`Successfully pushed tag ${tagName} to remote`);
     }
     catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        const message = error instanceof Error ? error.message : "Unknown error occurred";
         throw new Error(`Failed to push tag ${tagName}: ${message}`);
     }
 }
@@ -25828,15 +25816,11 @@ async function pushTag(tagName, force, verbose) {
  * Verifies that a tag points to the expected commit
  */
 async function verifyTag(tagName, expectedSha, verbose) {
-    if (verbose) {
-        core.debug(`Verifying tag ${tagName} points to ${expectedSha}`);
-    }
+    core.debug(`Verifying tag ${tagName} points to ${expectedSha}`);
     try {
         const actualSha = await getCommitSha(`refs/tags/${tagName}`, verbose);
         const matches = actualSha === expectedSha;
-        if (verbose) {
-            core.debug(`Tag verification: ${matches ? 'PASSED' : 'FAILED'} (expected: ${expectedSha.substring(0, 7)}, actual: ${actualSha.substring(0, 7)})`);
-        }
+        core.debug(`Tag verification: ${matches ? "PASSED" : "FAILED"} (expected: ${expectedSha.substring(0, 7)}, actual: ${actualSha.substring(0, 7)})`);
         return matches;
     }
     catch {
@@ -25896,16 +25880,16 @@ const git_1 = __nccwpck_require__(1243);
 async function run() {
     try {
         // Parse inputs
-        const tag = core.getInput('tag', { required: true });
-        const refTagInput = core.getInput('refTag');
-        const prefix = core.getInput('prefix') || 'v';
-        const updateMinor = core.getBooleanInput('updateMinor');
-        const ignorePrerelease = core.getBooleanInput('ignorePrerelease');
-        const verbose = core.getBooleanInput('verbose');
+        const tag = core.getInput("tag", { required: true });
+        const refTagInput = core.getInput("refTag");
+        const prefix = core.getInput("prefix") || "v";
+        const updateMinor = core.getBooleanInput("updateMinor");
+        const ignorePrerelease = core.getBooleanInput("ignorePrerelease");
+        const verbose = core.getBooleanInput("verbose");
         // Set ACTIONS_STEP_DEBUG if verbose is enabled
+        // This enables all core.debug() calls to output automatically
         if (verbose) {
-            process.env.ACTIONS_STEP_DEBUG = 'true';
-            core.debug('Verbose logging enabled');
+            process.env.ACTIONS_STEP_DEBUG = "true";
         }
         // Default refTag to tag if not provided
         const refTag = refTagInput || tag;
@@ -25915,17 +25899,16 @@ async function run() {
             prefix,
             updateMinor,
             ignorePrerelease,
-            verbose
+            verbose,
         };
-        if (verbose) {
-            core.debug('Action inputs:');
-            core.debug(`  tag: ${inputs.tag}`);
-            core.debug(`  refTag: ${inputs.refTag}`);
-            core.debug(`  prefix: ${inputs.prefix}`);
-            core.debug(`  updateMinor: ${inputs.updateMinor}`);
-            core.debug(`  ignorePrerelease: ${inputs.ignorePrerelease}`);
-            core.debug(`  verbose: ${inputs.verbose}`);
-        }
+        core.debug("Verbose logging enabled");
+        core.debug("Action inputs:");
+        core.debug(`  tag: ${inputs.tag}`);
+        core.debug(`  refTag: ${inputs.refTag}`);
+        core.debug(`  prefix: ${inputs.prefix}`);
+        core.debug(`  updateMinor: ${inputs.updateMinor}`);
+        core.debug(`  ignorePrerelease: ${inputs.ignorePrerelease}`);
+        core.debug(`  verbose: ${inputs.verbose}`);
         if (refTag !== tag) {
             core.info(`Using refTag "${refTag}" (different from version tag "${tag}")`);
         }
@@ -25938,18 +25921,25 @@ async function run() {
             core.setFailed(`Prerelease versions are ignored. Tag "${tag}" contains prerelease identifier "${versionInfo.prerelease}"`);
             return;
         }
-        if (verbose && versionInfo.isPrerelease) {
+        if (versionInfo.isPrerelease) {
             core.debug(`Prerelease version detected but proceeding (ignorePrerelease=false): ${versionInfo.prerelease}`);
         }
         // Get commit SHA for reference tag
         const commitSha = await (0, git_1.getCommitSha)(refTag, verbose);
-        // Create/update major version tag
+        // Show initial summary of what will be done
         const majorTagName = (0, version_1.createTagName)(prefix, versionInfo.major);
+        core.info(`📋 Plan: Will create/update floating tags pointing to commit ${commitSha.substring(0, 7)}`);
+        core.info(`   - Major tag: ${majorTagName}`);
+        if (updateMinor) {
+            const plannedMinorTagName = (0, version_1.createTagName)(prefix, versionInfo.major, versionInfo.minor);
+            core.info(`   - Minor tag: ${plannedMinorTagName}`);
+        }
+        // Create/update major version tag
         core.info(`Creating/updating major tag: ${majorTagName}`);
         const majorTagResult = await (0, git_1.createOrUpdateTag)(majorTagName, commitSha, verbose);
         // Push major tag
         await (0, git_1.pushTag)(majorTagName, majorTagResult.updated, verbose);
-        // Verify major tag
+        // Verify major tag (only in verbose mode to avoid unnecessary git calls)
         if (verbose) {
             const verified = await (0, git_1.verifyTag)(majorTagName, commitSha, verbose);
             if (!verified) {
@@ -25957,7 +25947,11 @@ async function run() {
             }
         }
         // Set major tag output
-        core.setOutput('majorTag', majorTagName);
+        core.setOutput("majorTag", majorTagName);
+        // Track results for final summary
+        const results = [
+            { tag: majorTagName, created: majorTagResult.created, updated: majorTagResult.updated }
+        ];
         // Create/update minor version tag if requested
         if (updateMinor) {
             const minorTagName = (0, version_1.createTagName)(prefix, versionInfo.major, versionInfo.minor);
@@ -25965,7 +25959,7 @@ async function run() {
             const minorTagResult = await (0, git_1.createOrUpdateTag)(minorTagName, commitSha, verbose);
             // Push minor tag
             await (0, git_1.pushTag)(minorTagName, minorTagResult.updated, verbose);
-            // Verify minor tag
+            // Verify minor tag (only in verbose mode to avoid unnecessary git calls)
             if (verbose) {
                 const verified = await (0, git_1.verifyTag)(minorTagName, commitSha, verbose);
                 if (!verified) {
@@ -25973,13 +25967,21 @@ async function run() {
                 }
             }
             // Set minor tag output
-            core.setOutput('minorTag', minorTagName);
+            core.setOutput("minorTag", minorTagName);
+            results.push({ tag: minorTagName, created: minorTagResult.created, updated: minorTagResult.updated });
         }
-        // Summary
-        core.info('✅ Successfully created/updated floating version tags');
-        if (verbose) {
-            core.debug('Action completed successfully');
+        // Final summary
+        core.info("✅ Successfully completed floating version tag operations");
+        core.info(`📊 Summary (all tags point to commit ${commitSha.substring(0, 7)}):`);
+        for (const result of results) {
+            if (result.created) {
+                core.info(`   ✓ Created: ${result.tag}`);
+            }
+            else if (result.updated) {
+                core.info(`   ↻ Updated: ${result.tag}`);
+            }
         }
+        core.debug("Action completed successfully");
     }
     catch (error) {
         if (error instanceof Error) {
@@ -25987,7 +25989,7 @@ async function run() {
             core.setFailed(error.message);
         }
         else {
-            const message = 'Unknown error occurred';
+            const message = "Unknown error occurred";
             core.error(message);
             core.setFailed(message);
         }
@@ -26050,26 +26052,24 @@ const core = __importStar(__nccwpck_require__(7484));
 function parseVersion(tag, verbose) {
     core.debug(`Parsing version from tag: ${tag}`);
     // Remove 'refs/tags/' prefix if present
-    let tagName = tag.replace(/^refs\/tags\//, '');
+    let tagName = tag.replace(/^refs\/tags\//, "");
     // Auto-detect and handle 'v' prefix
-    const hasVPrefix = tagName.startsWith('v');
+    const hasVPrefix = tagName.startsWith("v");
     if (hasVPrefix) {
         core.debug(`Detected 'v' prefix, will strip for parsing`);
         tagName = tagName.substring(1);
     }
     // Parse semantic version: major.minor.patch[-prerelease][+build]
-    // First try standard format
+    // Try matching version pattern directly first
     let versionRegex = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
     let match = tagName.match(versionRegex);
-    // If that fails, try to handle custom prefixes by extracting version part
+    // If no match, try to extract version from tags with custom prefixes (e.g., 'release-5.1.0')
     if (!match) {
-        // Try to match version pattern anywhere in the string (for custom prefixes like "release-5.1.0")
-        const flexibleVersionRegex = /(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
-        match = tagName.match(flexibleVersionRegex);
+        // Find the first occurrence of digit.digit.digit pattern anywhere in the string
+        versionRegex = /(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
+        match = tagName.match(versionRegex);
         if (match) {
-            // Found version pattern, use it (match groups are offset by 1 due to full match)
-            const versionMatch = [match[0], match[1], match[2], match[3], match[4], match[5]];
-            match = versionMatch;
+            core.debug(`Extracted version from custom prefix tag: ${match[0]}`);
         }
     }
     if (!match) {
@@ -26088,17 +26088,15 @@ function parseVersion(tag, verbose) {
         original: tag,
         isPrerelease,
         prerelease,
-        build
+        build,
     };
-    if (verbose) {
-        core.debug(`Parsed version components:`);
-        core.debug(`  Major: ${major}`);
-        core.debug(`  Minor: ${minor}`);
-        core.debug(`  Patch: ${patch}`);
-        core.debug(`  Prerelease: ${prerelease || 'none'}`);
-        core.debug(`  Build: ${build || 'none'}`);
-        core.debug(`  Is Prerelease: ${isPrerelease}`);
-    }
+    core.debug(`Parsed version components:`);
+    core.debug(`  Major: ${major}`);
+    core.debug(`  Minor: ${minor}`);
+    core.debug(`  Patch: ${patch}`);
+    core.debug(`  Prerelease: ${prerelease || "none"}`);
+    core.debug(`  Build: ${build || "none"}`);
+    core.debug(`  Is Prerelease: ${isPrerelease}`);
     return versionInfo;
 }
 /**

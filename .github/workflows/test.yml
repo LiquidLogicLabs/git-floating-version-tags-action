@@ -1,36 +1,36 @@
 name: Test
 
 on:
-  workflow_call:  # Only workflow_call - no direct triggers
+    workflow_call: # Only workflow_call - no direct triggers
 
 permissions:
-  contents: read  # Read-only (we don't actually push tags in tests)
+    contents: read # Read-only (we don't actually push tags in tests)
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for tag operations
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Full history for tag operations
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Configure git for testing
-        run: |
-          git config user.name "Test User"
-          git config user.email "test@example.com"
+            - name: Configure git for testing
+              run: |
+                  git config --local --replace-all user.name "Test User"
+                  git config --local --replace-all user.email "test@example.com"
 
-      - name: Build action
-        run: npm run build
+            - name: Build action
+              run: npm run build
 
-      - name: Run all tests (unit + integration)
-        run: npm test
+            - name: Run all tests (unit + integration)
+              run: npm test

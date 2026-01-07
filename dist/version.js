@@ -43,26 +43,24 @@ const core = __importStar(require("@actions/core"));
 function parseVersion(tag, verbose) {
     core.debug(`Parsing version from tag: ${tag}`);
     // Remove 'refs/tags/' prefix if present
-    let tagName = tag.replace(/^refs\/tags\//, '');
+    let tagName = tag.replace(/^refs\/tags\//, "");
     // Auto-detect and handle 'v' prefix
-    const hasVPrefix = tagName.startsWith('v');
+    const hasVPrefix = tagName.startsWith("v");
     if (hasVPrefix) {
         core.debug(`Detected 'v' prefix, will strip for parsing`);
         tagName = tagName.substring(1);
     }
     // Parse semantic version: major.minor.patch[-prerelease][+build]
-    // First try standard format
+    // Try matching version pattern directly first
     let versionRegex = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
     let match = tagName.match(versionRegex);
-    // If that fails, try to handle custom prefixes by extracting version part
+    // If no match, try to extract version from tags with custom prefixes (e.g., 'release-5.1.0')
     if (!match) {
-        // Try to match version pattern anywhere in the string (for custom prefixes like "release-5.1.0")
-        const flexibleVersionRegex = /(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
-        match = tagName.match(flexibleVersionRegex);
+        // Find the first occurrence of digit.digit.digit pattern anywhere in the string
+        versionRegex = /(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
+        match = tagName.match(versionRegex);
         if (match) {
-            // Found version pattern, use it (match groups are offset by 1 due to full match)
-            const versionMatch = [match[0], match[1], match[2], match[3], match[4], match[5]];
-            match = versionMatch;
+            core.debug(`Extracted version from custom prefix tag: ${match[0]}`);
         }
     }
     if (!match) {
@@ -81,17 +79,15 @@ function parseVersion(tag, verbose) {
         original: tag,
         isPrerelease,
         prerelease,
-        build
+        build,
     };
-    if (verbose) {
-        core.debug(`Parsed version components:`);
-        core.debug(`  Major: ${major}`);
-        core.debug(`  Minor: ${minor}`);
-        core.debug(`  Patch: ${patch}`);
-        core.debug(`  Prerelease: ${prerelease || 'none'}`);
-        core.debug(`  Build: ${build || 'none'}`);
-        core.debug(`  Is Prerelease: ${isPrerelease}`);
-    }
+    core.debug(`Parsed version components:`);
+    core.debug(`  Major: ${major}`);
+    core.debug(`  Minor: ${minor}`);
+    core.debug(`  Patch: ${patch}`);
+    core.debug(`  Prerelease: ${prerelease || "none"}`);
+    core.debug(`  Build: ${build || "none"}`);
+    core.debug(`  Is Prerelease: ${isPrerelease}`);
     return versionInfo;
 }
 /**

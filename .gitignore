@@ -33,6 +33,9 @@ coverage/
 .nyc_output/
 *.lcov
 
+# Test artifacts
+test-file.txt
+
 # AI Tools
 .bmad-core/
 .github/chatmodes/

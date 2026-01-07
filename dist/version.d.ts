@@ -1,4 +1,4 @@
-import { VersionInfo } from './types';
+import { VersionInfo } from "./types";
 /**
  * Extracts version information from a tag name
  * Supports tags with or without 'v' prefix (e.g., 'v1.2.3' or '1.2.3')

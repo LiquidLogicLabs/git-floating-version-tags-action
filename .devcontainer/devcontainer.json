@@ -8,18 +8,16 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
+		},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest",
+			"dockerDashComposeVersion": "v2"
     }
   },
 
   "customizations": {
     "vscode": {
-      "extensions": [
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-typescript-next",
-        "firsttris.vscode-jest-runner",
-        "orta.vscode-jest"
-      ],
+			"extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "ms-vscode.vscode-typescript-next", "firsttris.vscode-jest-runner", "orta.vscode-jest"],
       "settings": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -34,12 +32,15 @@
     }
   },
 
-  "postCreateCommand": "npm install",
+	"postCreateCommand": "bash .devcontainer/setup-container.sh",
   
   "remoteUser": "node",
   
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
-  ]
-}
+	"remoteEnv": {
+		"GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+		"GITEA_TOKEN": "${localEnv:GITEA_TOKEN}",
+		"GH_TOKEN": "${localEnv:GH_TOKEN}"
+	},
 
+	"mounts": ["source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"]
+}
