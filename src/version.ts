@@ -19,8 +19,20 @@ export function parseVersion(tag: string, verbose: boolean): VersionInfo {
   }
 
   // Parse semantic version: major.minor.patch[-prerelease][+build]
-  const versionRegex = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
-  const match = tagName.match(versionRegex);
+  // Try matching version pattern directly first
+  let versionRegex = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
+  let match = tagName.match(versionRegex);
+
+  // If no match, try to extract version from tags with custom prefixes (e.g., 'release-5.1.0')
+  if (!match) {
+    // Find the first occurrence of digit.digit.digit pattern anywhere in the string
+    versionRegex = /(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+(.+))?$/;
+    match = tagName.match(versionRegex);
+    
+    if (match && verbose) {
+      core.debug(`Extracted version from custom prefix tag: ${match[0]}`);
+    }
+  }
 
   if (!match) {
     throw new Error(

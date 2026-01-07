@@ -85,7 +85,12 @@ function gitTagExists(tagName: string): boolean {
 
 function getTagSha(tagName: string): string | null {
   try {
-    return runGitSync(['rev-parse', `refs/tags/${tagName}`]);
+    const result = runGitSync(['rev-parse', `refs/tags/${tagName}`]);
+    // Return null if empty string or invalid SHA (SHA should be exactly 40 chars)
+    if (!result || result.length !== 40) {
+      return null;
+    }
+    return result;
   } catch {
     return null;
   }
@@ -216,11 +221,23 @@ describe('Integration Tests', () => {
       // Tag might already exist, continue
     }
 
-    // Run action - should fail
+    // Run action - should fail (setFailed will be called)
     process.env.INPUT_TAG = tagName;
     process.env.INPUT_UPDATEMINOR = 'false';
+    process.env.INPUT_IGNOREPRERELEASE = 'true'; // IMPORTANT: Enable prerelease skipping
     
-    await expect(runAction()).rejects.toThrow();
+    // Clear mocks before running
+    mockSetFailed.mockClear();
+    
+    // Run action - setFailed will throw, catch it
+    try {
+      await runAction();
+    } catch (error) {
+      // Expected - setFailed throws
+    }
+    
+    // Verify setFailed was called
+    expect(mockSetFailed).toHaveBeenCalled();
 
     // Verify tag doesn't exist locally
     const localTag = getTagSha('v4');

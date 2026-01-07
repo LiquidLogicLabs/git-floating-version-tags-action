@@ -25862,6 +25862,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = run;
 const core = __importStar(__nccwpck_require__(7484));
 const version_1 = __nccwpck_require__(311);
 const git_1 = __nccwpck_require__(1243);
@@ -25968,8 +25969,10 @@ async function run() {
         }
     }
 }
-// Run the action
-run();
+// Run the action (only when executed directly, not when imported for testing)
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
 
 
 /***/ }),

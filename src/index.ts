@@ -11,7 +11,7 @@ import { ActionInputs } from './types';
 /**
  * Main action entry point
  */
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     // Parse inputs
     const tag = core.getInput('tag', { required: true });
@@ -148,5 +148,7 @@ async function run(): Promise<void> {
   }
 }
 
-// Run the action
-run();
+// Run the action (only when executed directly, not when imported for testing)
+if (require.main === module) {
+  run();
+}
