@@ -9,8 +9,9 @@ permissions:
 
 jobs:
   test:
-    # Always run when called via workflow_call or workflow_dispatch, skip only on direct tag pushes
-    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type != 'tag')
+    # Always run when called via workflow_call or workflow_dispatch
+    # This workflow only has workflow_call and workflow_dispatch triggers, so it should always run
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -38,5 +39,8 @@ jobs:
       - name: Build action
         run: npm run build
 
-      - name: Run all tests (unit + integration)
-        run: npm test
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration

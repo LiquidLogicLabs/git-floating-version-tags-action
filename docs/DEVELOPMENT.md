@@ -14,8 +14,8 @@ This document provides information for developers who want to contribute to this
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/LiquidLogicLabs/git-floating-version-tags-action.git
-cd git-floating-version-tags-action
+git clone https://github.com/LiquidLogicLabs/git-action-tag-floating-version.git
+cd git-action-tag-floating-version
 ```
 
 ### Install Dependencies
@@ -55,7 +55,7 @@ npm test
 ## Project Structure
 
 ```
-git-floating-version-tags-action/
+git-action-tag-floating-version/
 ├── src/                    # TypeScript source code
 │   ├── index.ts           # Main entry point
 │   ├── types.ts           # TypeScript type definitions
